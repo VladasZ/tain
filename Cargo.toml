@@ -7,3 +7,6 @@ members = ["tests", "tain"]
 default-members = ["tain"]
 
 [workspace.dependencies]
+anyhow = "1.0"
+tokio = { version = "1.37", features = ["full"] }
+testcontainers = "0.15"
