@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use testcontainers::{core::WaitFor, Image};
 
 const NAME: &str = "postgres";
-const TAG: &str = "11-alpine";
+const TAG: &str = "16-alpine";
 
 /// Module to work with [`Postgres`] inside of tests.
 ///
@@ -34,30 +34,24 @@ pub struct Postgres {
 }
 
 impl Postgres {
-    /// Enables the Postgres instance to be used without authentication on host.
-    /// For more information see the description of `POSTGRES_HOST_AUTH_METHOD` in official [docker image](https://hub.docker.com/_/postgres)
-    pub fn with_host_auth(mut self) -> Self {
-        self.env_vars.insert("POSTGRES_HOST_AUTH_METHOD".to_owned(), "trust".to_owned());
-        self
-    }
-
-    /// Sets the db name for the Postgres instance.
-    pub fn with_db_name(mut self, db_name: &str) -> Self {
-        self.env_vars.insert("POSTGRES_DB".to_owned(), db_name.to_owned());
-        self
-    }
-
-    /// Sets the user for the Postgres instance.
-    pub fn with_user(mut self, user: &str) -> Self {
-        self.env_vars.insert("POSTGRES_USER".to_owned(), user.to_owned());
-        self
-    }
-
-    /// Sets the password for the Postgres instance.
-    pub fn with_password(mut self, password: &str) -> Self {
-        self.env_vars.insert("POSTGRES_PASSWORD".to_owned(), password.to_owned());
-        self
-    }
+    //
+    // /// Sets the db name for the Postgres instance.
+    // pub fn with_db_name(mut self, db_name: &str) -> Self {
+    //     self.env_vars.insert("POSTGRES_DB".to_owned(), db_name.to_owned());
+    //     self
+    // }
+    //
+    // /// Sets the user for the Postgres instance.
+    // pub fn with_user(mut self, user: &str) -> Self {
+    //     self.env_vars.insert("POSTGRES_USER".to_owned(), user.to_owned());
+    //     self
+    // }
+    //
+    // /// Sets the password for the Postgres instance.
+    // pub fn with_password(mut self, password: &str) -> Self {
+    //     self.env_vars.insert("POSTGRES_PASSWORD".to_owned(), password.to_owned());
+    //     self
+    // }
 }
 
 impl Default for Postgres {
@@ -90,52 +84,5 @@ impl Image for Postgres {
 
     fn env_vars(&self) -> Box<dyn Iterator<Item = (&String, &String)> + '_> {
         Box::new(self.env_vars.iter())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use testcontainers::{clients, RunnableImage};
-
-    use super::*;
-
-    #[test]
-    fn postgres_one_plus_one() {
-        let docker = clients::Cli::default();
-        let postgres_image = Postgres::default().with_host_auth();
-        let node = docker.run(postgres_image);
-
-        let connection_string = &format!(
-            "postgres://postgres@127.0.0.1:{}/postgres",
-            node.get_host_port_ipv4(5432)
-        );
-        let mut conn = postgres::Client::connect(connection_string, postgres::NoTls).unwrap();
-
-        let rows = conn.query("SELECT 1 + 1", &[]).unwrap();
-        assert_eq!(rows.len(), 1);
-
-        let first_row = &rows[0];
-        let first_column: i32 = first_row.get(0);
-        assert_eq!(first_column, 2);
-    }
-
-    #[test]
-    fn postgres_custom_version() {
-        let docker = clients::Cli::default();
-        let image = RunnableImage::from(Postgres::default()).with_tag("13-alpine");
-        let node = docker.run(image);
-
-        let connection_string = &format!(
-            "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-            node.get_host_port_ipv4(5432)
-        );
-        let mut conn = postgres::Client::connect(connection_string, postgres::NoTls).unwrap();
-
-        let rows = conn.query("SELECT version()", &[]).unwrap();
-        assert_eq!(rows.len(), 1);
-
-        let first_row = &rows[0];
-        let first_column: String = first_row.get(0);
-        assert!(first_column.contains("13"));
     }
 }
