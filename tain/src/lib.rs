@@ -1,15 +1,7 @@
 mod postgres;
 
-use anyhow::Result;
-use testcontainers::clients::Cli;
+pub use crate::postgres::Postgres;
 
-use crate::postgres::Postgres;
+pub use testcontainers::Container;
+pub use testcontainers::clients::Cli as Docker;
 
-pub async fn start_postgres() -> Result<()> {
-    let docker = Cli::default();
-    let postgres = docker.run(Postgres::default());
-
-    dbg!(&postgres);
-
-    Ok(())
-}

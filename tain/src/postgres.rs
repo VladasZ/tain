@@ -31,27 +31,34 @@ const TAG: &str = "16-alpine";
 #[derive(Debug)]
 pub struct Postgres {
     env_vars: HashMap<String, String>,
+    port: u16,
 }
 
 impl Postgres {
-    //
-    // /// Sets the db name for the Postgres instance.
-    // pub fn with_db_name(mut self, db_name: &str) -> Self {
-    //     self.env_vars.insert("POSTGRES_DB".to_owned(), db_name.to_owned());
-    //     self
-    // }
-    //
-    // /// Sets the user for the Postgres instance.
-    // pub fn with_user(mut self, user: &str) -> Self {
-    //     self.env_vars.insert("POSTGRES_USER".to_owned(), user.to_owned());
-    //     self
-    // }
-    //
-    // /// Sets the password for the Postgres instance.
-    // pub fn with_password(mut self, password: &str) -> Self {
-    //     self.env_vars.insert("POSTGRES_PASSWORD".to_owned(), password.to_owned());
-    //     self
-    // }
+    pub fn db(mut self, db_name: impl ToString) -> Self {
+        self.env_vars.insert("POSTGRES_DB".to_owned(), db_name.to_string());
+        self
+    }
+
+    pub fn user(mut self, user: impl ToString) -> Self {
+        self.env_vars.insert("POSTGRES_USER".to_owned(), user.to_string());
+        self
+    }
+
+    pub fn password(mut self, password: impl ToString) -> Self {
+        self.env_vars.insert("POSTGRES_PASSWORD".to_owned(), password.to_string());
+        self
+    }
+
+    pub fn port(mut self, port: u16) -> Self {
+        self.port = port;
+        self
+    }
+
+    pub fn data(mut self, password: impl ToString) -> Self {
+        self.env_vars.insert("PGDATA".to_owned(), password.to_string());
+        self
+    }
 }
 
 impl Default for Postgres {
@@ -61,7 +68,7 @@ impl Default for Postgres {
         env_vars.insert("POSTGRES_USER".to_owned(), "postgres".to_owned());
         env_vars.insert("POSTGRES_PASSWORD".to_owned(), "postgres".to_owned());
 
-        Self { env_vars }
+        Self { env_vars, port: 5432 }
     }
 }
 
@@ -84,5 +91,9 @@ impl Image for Postgres {
 
     fn env_vars(&self) -> Box<dyn Iterator<Item = (&String, &String)> + '_> {
         Box::new(self.env_vars.iter())
+    }
+
+    fn expose_ports(&self) -> Vec<u16> {
+        vec![self.port]
     }
 }
