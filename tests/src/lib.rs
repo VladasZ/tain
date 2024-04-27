@@ -1,9 +1,15 @@
 use anyhow::Result;
-use tain::request_container;
+use tain::Postgres;
 
 #[tokio::test]
 async fn test() -> Result<()> {
-    request_container().await?;
+    let _container = Postgres::default()
+        .db("db_name")
+        .user("user")
+        .password("password")
+        .port(1111)
+        .data("path/to/data")
+        .start_container();
 
     Ok(())
 }

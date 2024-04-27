@@ -1,37 +1,22 @@
 use std::collections::HashMap;
 
-use testcontainers::{core::WaitFor, Image};
+use testcontainers::{core::WaitFor, Container, Image};
+
+use crate::docker::docker;
 
 const NAME: &str = "postgres";
 const TAG: &str = "16-alpine";
 
-/// Module to work with [`Postgres`] inside of tests.
-///
-/// Starts an instance of Postgres.
-/// This module is based on the official [`Postgres docker image`].
-///
-/// Default db name, user and password is `postgres`.
-///
-/// # Example
-/// ```
-/// use testcontainers::clients;
-/// use testcontainers_modules::postgres;
-///
-/// let docker = clients::Cli::default();
-/// let postgres_instance = docker.run(postgres::Postgres::default());
-///
-/// let connection_string = format!(
-///     "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-///     postgres_instance.get_host_port_ipv4(5432)
-/// );
-/// ```
-///
-/// [`Postgres`]: https://www.postgresql.org/
-/// [`Postgres docker image`]: https://hub.docker.com/_/postgres
 #[derive(Debug)]
 pub struct Postgres {
     env_vars: HashMap<String, String>,
-    port: u16,
+    port:     u16,
+}
+
+impl Postgres {
+    pub fn start_container(self) -> Container<'static, Self> {
+        docker().run(self)
+    }
 }
 
 impl Postgres {
