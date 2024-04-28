@@ -10,7 +10,6 @@ const TAG: &str = "16-alpine";
 #[derive(Debug)]
 pub struct Postgres {
     env_vars: HashMap<String, String>,
-    port:     u16,
 }
 
 impl Postgres {
@@ -35,11 +34,6 @@ impl Postgres {
         self
     }
 
-    pub fn port(mut self, port: u16) -> Self {
-        self.port = port;
-        self
-    }
-
     pub fn data(mut self, password: impl ToString) -> Self {
         self.env_vars.insert("PGDATA".to_owned(), password.to_string());
         self
@@ -53,7 +47,7 @@ impl Default for Postgres {
         env_vars.insert("POSTGRES_USER".to_owned(), "postgres".to_owned());
         env_vars.insert("POSTGRES_PASSWORD".to_owned(), "postgres".to_owned());
 
-        Self { env_vars, port: 5432 }
+        Self { env_vars }
     }
 }
 
@@ -76,9 +70,5 @@ impl Image for Postgres {
 
     fn env_vars(&self) -> Box<dyn Iterator<Item = (&String, &String)> + '_> {
         Box::new(self.env_vars.iter())
-    }
-
-    fn expose_ports(&self) -> Vec<u16> {
-        vec![self.port]
     }
 }
