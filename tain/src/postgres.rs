@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex, OnceLock, Weak},
+};
 
 use testcontainers::{core::WaitFor, Container, Image};
 
@@ -6,6 +9,8 @@ use crate::docker::docker;
 
 const NAME: &str = "postgres";
 const TAG: &str = "16-alpine";
+
+pub type PostgresArc = Arc<Container<'static, Postgres>>;
 
 #[derive(Debug)]
 pub struct Postgres {
@@ -15,6 +20,30 @@ pub struct Postgres {
 impl Postgres {
     pub fn start_container(self) -> Container<'static, Self> {
         docker().run(self)
+    }
+
+    // pub fn sokolikcik2<T>(setup: impl FnOnce(T) -> T) -> PostgresArc {
+    //     static POSTGRES: OnceLock<Weak<Container<T>>> = OnceLock::new();
+    //
+    //     todo!()
+    // }
+
+    pub fn sokolikcik(setup: impl FnOnce(Postgres) -> Postgres) -> PostgresArc {
+        static POSTGRES: OnceLock<Weak<Container<Postgres>>> = OnceLock::new();
+        static LOCK: Mutex<()> = Mutex::new(());
+
+        let _init = LOCK.lock().unwrap();
+
+        if let Some(weak) = POSTGRES.get() {
+            return weak.upgrade().unwrap();
+        }
+
+        let container: Arc<Container<Postgres>> = Arc::new(setup(Postgres::default()).start_container());
+        let weak = Arc::downgrade(&container);
+
+        POSTGRES.set(weak).unwrap();
+
+        container
     }
 }
 
