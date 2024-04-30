@@ -28,7 +28,7 @@ impl Postgres {
     //     todo!()
     // }
 
-    pub fn sokolikcik(setup: impl FnOnce(Postgres) -> Postgres) -> PostgresArc {
+    pub fn sokolikcik(setup: impl FnOnce() -> Container<'static, Postgres>) -> PostgresArc {
         static POSTGRES: OnceLock<Weak<Container<Postgres>>> = OnceLock::new();
         static LOCK: Mutex<()> = Mutex::new(());
 
@@ -38,7 +38,7 @@ impl Postgres {
             return weak.upgrade().unwrap();
         }
 
-        let container: Arc<Container<Postgres>> = Arc::new(setup(Postgres::default()).start_container());
+        let container: Arc<Container<Postgres>> = Arc::new(setup());
         let weak = Arc::downgrade(&container);
 
         POSTGRES.set(weak).unwrap();

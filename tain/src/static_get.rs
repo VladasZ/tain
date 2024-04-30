@@ -20,21 +20,34 @@ fn vec_to_val<T>(v: &[u8]) -> &T {
     unsafe { &*(buff as *const u8).cast::<T>() }
 }
 
-pub fn static_get<T: Default>() -> &'static T {
-    let _lock = LOCK.lock().unwrap();
-    let type_name = type_name::<T>();
+pub struct Static;
 
-    unsafe {
-        let data = STORAGE.entry(type_name).or_insert_with(|| val_to_vec(T::default()));
-        vec_to_val(data)
+impl Static {
+    pub fn get<T: Default>() -> &'static T {
+        let _lock = LOCK.lock().unwrap();
+        let type_name = type_name::<T>();
+        unsafe {
+            let data = STORAGE.entry(type_name).or_insert_with(|| val_to_vec(T::default()));
+            vec_to_val(data)
+        }
     }
-}
 
-pub fn static_drop<T>() {
-    let _lock = LOCK.lock().unwrap();
-    let type_name = type_name::<T>();
-    unsafe {
-        STORAGE.remove(type_name);
+    pub fn set<T>(val: T) -> &'static T {
+        let _lock = LOCK.lock().unwrap();
+        let type_name = type_name::<T>();
+        unsafe {
+            assert!(
+                STORAGE.insert(type_name, val_to_vec(val)).is_none(),
+                "Static initialization can pe performen only once. Type: {type_name}"
+            );
+            let data = STORAGE.get(type_name).unwrap();
+            vec_to_val(data)
+        }
+    }
+
+    pub fn exists<T>() -> bool {
+        let _lock = LOCK.lock().unwrap();
+        unsafe { STORAGE.contains_key(type_name::<T>()) }
     }
 }
 
@@ -44,10 +57,7 @@ mod test {
 
     use fake::Fake;
 
-    use crate::{
-        static_drop,
-        static_get::{static_get, val_to_vec, vec_to_val},
-    };
+    use crate::static_get::{val_to_vec, vec_to_val, Static};
 
     #[derive(Debug, Copy, Clone, PartialEq)]
     struct Data {
@@ -70,29 +80,34 @@ mod test {
 
     #[test]
     fn test_static_get() {
-        assert_eq!(static_get::<u32>(), &0);
-        assert_eq!(static_get::<bool>(), &false);
-        assert_eq!(static_get::<String>(), &String::default());
-        assert_eq!(static_get::<Data>(), &Data::default());
+        assert_eq!(Static::exists::<u32>(), false);
+        assert_eq!(Static::get::<u32>(), &0);
+        assert_eq!(Static::exists::<u32>(), true);
 
-        let atomic = static_get::<AtomicU8>();
+        assert_eq!(Static::get::<bool>(), &false);
+        assert_eq!(Static::get::<String>(), &String::default());
+        assert_eq!(Static::get::<Data>(), &Data::default());
+
+        let atomic = Static::get::<AtomicU8>();
         assert_eq!(atomic.load(Ordering::Relaxed), 0);
 
         for _ in 0..1_000_000 {
             let val = (0..255).fake();
 
-            let atomic = static_get::<AtomicU8>();
+            let atomic = Static::get::<AtomicU8>();
             atomic.store(val, Ordering::Relaxed);
-            assert_eq!(static_get::<AtomicU8>().load(Ordering::Relaxed), val);
+            assert_eq!(Static::get::<AtomicU8>().load(Ordering::Relaxed), val);
         }
 
-        let atomic = static_get::<AtomicU8>();
+        let atomic = Static::get::<AtomicU8>();
         atomic.store(55, Ordering::Relaxed);
-        assert_eq!(static_get::<AtomicU8>().load(Ordering::Relaxed), 55);
+        assert_eq!(Static::get::<AtomicU8>().load(Ordering::Relaxed), 55);
+    }
 
-        static_drop::<AtomicU8>();
-        let atomic = static_get::<AtomicU8>();
-        assert_eq!(atomic.load(Ordering::Relaxed), 0);
+    #[test]
+    fn test_static_set() {
+        assert_eq!(Static::set::<f64>(5.0), &5.0);
+        assert_eq!(Static::get::<f64>(), &5.0);
     }
 
     #[test]

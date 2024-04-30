@@ -3,7 +3,14 @@
 use tain::{Postgres, PostgresArc};
 
 fn get_postgres() -> PostgresArc {
-    Postgres::sokolikcik(|pg| pg.db("db_name").user("user").password("password").data("path/to/data"))
+    Postgres::sokolikcik(|| {
+        Postgres::default()
+            .db("db_name")
+            .user("user")
+            .password("password")
+            .data("path/to/data")
+            .start_container()
+    })
 }
 
 fn test_postgres(pg: PostgresArc) {
