@@ -1,4 +1,10 @@
-use std::{any::type_name, collections::BTreeMap, mem::size_of, ptr::addr_of, sync::Mutex};
+use std::{
+    any::type_name,
+    collections::BTreeMap,
+    mem::size_of,
+    ptr::{addr_of, from_ref},
+    sync::Mutex,
+};
 
 static LOCK: Mutex<()> = Mutex::new(());
 static mut STORAGE: BTreeMap<&'static str, Vec<u8>> = BTreeMap::new();
@@ -17,7 +23,7 @@ fn val_to_vec<T>(val: T) -> Vec<u8> {
 
 fn vec_to_val<T>(v: &[u8]) -> &T {
     let buff = &v[0];
-    unsafe { &*(buff as *const u8).cast::<T>() }
+    unsafe { &*from_ref::<u8>(buff).cast::<T>() }
 }
 
 pub struct Static;
