@@ -1,9 +1,8 @@
 #![cfg(test)]
 
-use std::time::Duration;
+use std::{thread::sleep, time::Duration};
 
-use tain::{AsyncRunner, Postgres};
-use tokio::time::sleep;
+use tain::{AsyncRunner, ImageExt, Postgres};
 
 fn get_postgres() -> () {
     // Postgres::sokolikcik(|| {
@@ -36,9 +35,11 @@ fn test_postgres(_pg: ()) {
 #[ignore]
 #[tokio::test]
 async fn start_test() -> anyhow::Result<()> {
-    let container = Postgres::default().start().await?;
+    let container = Postgres::default().with_mapped_port(5424, 5432.into()).start().await?;
     dbg!(&container);
-    sleep(Duration::from_secs(100000000)).await;
+
+    sleep(Duration::from_secs(40000));
+    // sleep(Duration::from_secs(100000000)).await;
     Ok(())
 }
 

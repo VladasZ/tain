@@ -10,5 +10,6 @@ default-members = ["tain"]
 anyhow = "1.0"
 postgres = "0.19"
 tokio = { version = "1.38", features = ["full"] }
-testcontainers = "0.20.0"
+testcontainers = { version = "0.20.0", features = ["blocking"] }
+#testcontainers = { path = "../../3/testcontainers-rs/testcontainers" }
 fake = "2.9.2"
