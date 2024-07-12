@@ -1,50 +1,45 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex, OnceLock, Weak},
+use std::{borrow::Cow, collections::HashMap};
+
+use testcontainers::{
+    core::{ContainerPort, WaitFor},
+    Image,
 };
-
-use testcontainers::{core::WaitFor, Container, Image};
-
-use crate::docker::docker;
 
 const NAME: &str = "postgres";
 const TAG: &str = "16-alpine";
 
-pub type PostgresArc = Arc<Container<'static, Postgres>>;
+// pub type PostgresArc = Arc<Container<'static, Postgres>>;
 
 #[derive(Debug)]
 pub struct Postgres {
+    ports:    Vec<ContainerPort>,
     env_vars: HashMap<String, String>,
 }
 
 impl Postgres {
-    pub fn start_container(self) -> Container<'static, Self> {
-        docker().run(self)
-    }
-
     // pub fn sokolikcik2<T>(setup: impl FnOnce(T) -> T) -> PostgresArc {
     //     static POSTGRES: OnceLock<Weak<Container<T>>> = OnceLock::new();
     //
     //     todo!()
     // }
 
-    pub fn sokolikcik(setup: impl FnOnce() -> Container<'static, Postgres>) -> PostgresArc {
-        static POSTGRES: OnceLock<Weak<Container<Postgres>>> = OnceLock::new();
-        static LOCK: Mutex<()> = Mutex::new(());
-
-        let _init = LOCK.lock().unwrap();
-
-        if let Some(weak) = POSTGRES.get() {
-            return weak.upgrade().unwrap();
-        }
-
-        let container: Arc<Container<Postgres>> = Arc::new(setup());
-        let weak = Arc::downgrade(&container);
-
-        POSTGRES.set(weak).unwrap();
-
-        container
-    }
+    // pub fn sokolikcik(setup: impl FnOnce() -> Container<'static, Postgres>) ->
+    // PostgresArc {     static POSTGRES: OnceLock<Weak<Container<Postgres>>> =
+    // OnceLock::new();     static LOCK: Mutex<()> = Mutex::new(());
+    //
+    //     let _init = LOCK.lock().unwrap();
+    //
+    //     if let Some(weak) = POSTGRES.get() {
+    //         return weak.upgrade().unwrap();
+    //     }
+    //
+    //     let container: Arc<Container<Postgres>> = Arc::new(setup());
+    //     let weak = Arc::downgrade(&container);
+    //
+    //     POSTGRES.set(weak).unwrap();
+    //
+    //     container
+    // }
 }
 
 impl Postgres {
@@ -76,19 +71,20 @@ impl Default for Postgres {
         env_vars.insert("POSTGRES_USER".to_owned(), "postgres".to_owned());
         env_vars.insert("POSTGRES_PASSWORD".to_owned(), "postgres".to_owned());
 
-        Self { env_vars }
+        Self {
+            ports: vec![5432.into()],
+            env_vars,
+        }
     }
 }
 
 impl Image for Postgres {
-    type Args = ();
-
-    fn name(&self) -> String {
-        NAME.to_owned()
+    fn name(&self) -> &str {
+        NAME
     }
 
-    fn tag(&self) -> String {
-        TAG.to_owned()
+    fn tag(&self) -> &str {
+        TAG
     }
 
     fn ready_conditions(&self) -> Vec<WaitFor> {
@@ -97,7 +93,11 @@ impl Image for Postgres {
         )]
     }
 
-    fn env_vars(&self) -> Box<dyn Iterator<Item = (&String, &String)> + '_> {
-        Box::new(self.env_vars.iter())
+    fn env_vars(&self) -> impl IntoIterator<Item = (impl Into<Cow<'_, str>>, impl Into<Cow<'_, str>>)> {
+        self.env_vars.iter()
+    }
+
+    fn expose_ports(&self) -> &[ContainerPort] {
+        &self.ports
     }
 }
