@@ -7,9 +7,8 @@ members = ["tests", "tain"]
 default-members = ["tain"]
 
 [workspace.dependencies]
+log = "0.4"
+dirs = "5.0"
 anyhow = "1.0"
-postgres = "0.19"
-tokio = { version = "1.38", features = ["full"] }
-testcontainers = { version = "0.20.0", features = ["blocking"] }
-#testcontainers = { path = "../../3/testcontainers-rs/testcontainers" }
-fake = "2.9.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

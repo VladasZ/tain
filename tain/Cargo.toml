@@ -9,6 +9,8 @@ homepage = "https://github.com/VladasZ/tain"
 repository = "https://github.com/VladasZ/tain"
 
 [dependencies]
-fake = { workspace = true }
-testcontainers = { workspace = true }
-tokio = { workspace = true }
+dirs = { workspace = true }
+log = { workspace = true }
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

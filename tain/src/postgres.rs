@@ -1,103 +1,70 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::process::Command;
 
-use testcontainers::{
-    core::{ContainerPort, WaitFor},
-    Image,
-};
+use anyhow::{anyhow, bail, Result};
 
-const NAME: &str = "postgres";
-const TAG: &str = "16-alpine";
-
-// pub type PostgresArc = Arc<Container<'static, Postgres>>;
-
-#[derive(Debug)]
-pub struct Postgres {
-    ports:    Vec<ContainerPort>,
-    env_vars: HashMap<String, String>,
-}
+pub struct Postgres {}
 
 impl Postgres {
-    // pub fn sokolikcik2<T>(setup: impl FnOnce(T) -> T) -> PostgresArc {
-    //     static POSTGRES: OnceLock<Weak<Container<T>>> = OnceLock::new();
-    //
-    //     todo!()
-    // }
+    pub fn start(name: &str) -> Result<()> {
+        let home = dirs::home_dir().ok_or(anyhow!("no HOME"))?;
+        let home = home.to_str().unwrap();
 
-    // pub fn sokolikcik(setup: impl FnOnce() -> Container<'static, Postgres>) ->
-    // PostgresArc {     static POSTGRES: OnceLock<Weak<Container<Postgres>>> =
-    // OnceLock::new();     static LOCK: Mutex<()> = Mutex::new(());
-    //
-    //     let _init = LOCK.lock().unwrap();
-    //
-    //     if let Some(weak) = POSTGRES.get() {
-    //         return weak.upgrade().unwrap();
-    //     }
-    //
-    //     let container: Arc<Container<Postgres>> = Arc::new(setup());
-    //     let weak = Arc::downgrade(&container);
-    //
-    //     POSTGRES.set(weak).unwrap();
-    //
-    //     container
-    // }
-}
+        let source = format!("{home}/spesogon_pg");
+        let pg_data = "/spesogon_pg";
 
-impl Postgres {
-    pub fn db(mut self, db_name: impl ToString) -> Self {
-        self.env_vars.insert("POSTGRES_DB".to_owned(), db_name.to_string());
-        self
-    }
+        let output = Command::new("docker")
+            .arg("run")
+            .arg("--name")
+            .arg(name)
+            .arg("--mount")
+            .arg(format!("type=bind,source={source},target={pg_data}"))
+            .arg("--cap-add=SYS_PTRACE")
+            .arg("--security-opt")
+            .arg("seccomp=unconfined")
+            .arg("-p")
+            .arg("5432:5432")
+            .arg("-e")
+            .arg("POSTGRES_PASSWORD=1111")
+            .arg("-e")
+            .arg("POSTGRES_DB=spesogon")
+            .arg("-e")
+            .arg("PGDATA={pg_data}")
+            .arg("-d")
+            .arg("postgres:16.2-alpine")
+            .output()?;
 
-    pub fn user(mut self, user: impl ToString) -> Self {
-        self.env_vars.insert("POSTGRES_USER".to_owned(), user.to_string());
-        self
-    }
-
-    pub fn password(mut self, password: impl ToString) -> Self {
-        self.env_vars.insert("POSTGRES_PASSWORD".to_owned(), password.to_string());
-        self
-    }
-
-    pub fn data(mut self, password: impl ToString) -> Self {
-        self.env_vars.insert("PGDATA".to_owned(), password.to_string());
-        self
-    }
-}
-
-impl Default for Postgres {
-    fn default() -> Self {
-        let mut env_vars = HashMap::new();
-        env_vars.insert("POSTGRES_DB".to_owned(), "postgres".to_owned());
-        env_vars.insert("POSTGRES_USER".to_owned(), "postgres".to_owned());
-        env_vars.insert("POSTGRES_PASSWORD".to_owned(), "postgres".to_owned());
-
-        Self {
-            ports: vec![5432.into()],
-            env_vars,
+        if !output.status.success() {
+            bail!(String::from_utf8(output.stderr).unwrap());
         }
+
+        Ok(())
     }
 }
 
-impl Image for Postgres {
-    fn name(&self) -> &str {
-        NAME
-    }
-
-    fn tag(&self) -> &str {
-        TAG
-    }
-
-    fn ready_conditions(&self) -> Vec<WaitFor> {
-        vec![WaitFor::message_on_stderr(
-            "database system is ready to accept connections",
-        )]
-    }
-
-    fn env_vars(&self) -> impl IntoIterator<Item = (impl Into<Cow<'_, str>>, impl Into<Cow<'_, str>>)> {
-        self.env_vars.iter()
-    }
-
-    fn expose_ports(&self) -> &[ContainerPort] {
-        &self.ports
-    }
-}
+// #!/usr/bin/env python3
+//
+// import os
+//
+//
+// def run(string):
+// print(string)
+// if os.system(string):
+// raise Exception("Shell script has failed")
+//
+//
+// pg_data = "/spesogon_pg"
+//
+// source = os.path.normpath(os.path.expanduser("~/spesogon_pg"))
+//
+// print(source)
+//
+// run(f"sudo docker run \
+//     --name postgres_spesogon_test \
+//     --mount type=bind,source={source},target={pg_data} \
+//     --cap-add=SYS_PTRACE \
+//     --security-opt seccomp=unconfined \
+//     -p 5432:5432 \
+//     -e POSTGRES_PASSWORD=1111 \
+//     -e POSTGRES_DB=spesogon \
+//     -e PGDATA={pg_data} \
+//     -d postgres:16.2-alpine")
