@@ -28,7 +28,7 @@ impl Postgres {
             .arg("-e")
             .arg("POSTGRES_DB=spesogon")
             .arg("-e")
-            .arg("PGDATA={pg_data}")
+            .arg(format!("PGDATA={pg_data}"))
             .arg("-d")
             .arg("postgres:16.2-alpine")
             .output()?;
