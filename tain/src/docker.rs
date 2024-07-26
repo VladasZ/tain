@@ -4,7 +4,7 @@ use anyhow::{bail, Result};
 use log::info;
 use serde_json::from_str;
 
-use crate::container::DockerContainer;
+use crate::{container::DockerContainer, ContainerConfig};
 
 pub struct Docker {}
 
@@ -40,6 +40,41 @@ impl Docker {
     pub fn running(name: &str) -> Result<bool> {
         let containers = Self::running_containers()?;
         Ok(containers.into_iter().any(|c| c.names == name))
+    }
+
+    pub fn start(config: ContainerConfig) -> Result<()> {
+        let mut command = Command::new("docker");
+
+        command
+            .arg("run")
+            .arg("--name")
+            .arg(config.name)
+            .arg("--cap-add=SYS_PTRACE")
+            .arg("--security-opt")
+            .arg("seccomp=unconfined")
+            .arg("-p")
+            .arg(format!("{}:{}", config.port.host, config.port.container));
+
+        if let Some(mount) = config.mount {
+            command.arg("--mount").arg(format!(
+                "type=bind,source={},target={}",
+                mount.host, mount.container
+            ));
+        };
+
+        for (key, value) in config.env {
+            command.arg("-e").arg(format!("{key}={value}"));
+        }
+
+        command.arg("--detach").arg(config.image);
+
+        let output = command.output()?;
+
+        if !output.status.success() {
+            bail!(String::from_utf8(output.stderr).unwrap());
+        }
+
+        Ok(())
     }
 
     pub fn rm(name: &str) -> Result<()> {

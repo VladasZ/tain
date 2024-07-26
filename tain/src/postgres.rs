@@ -1,6 +1,8 @@
-use std::process::Command;
+use std::collections::HashMap;
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, Result};
+
+use crate::{ContainerConfig, Docker, Mount, Port};
 
 pub struct Postgres {}
 
@@ -12,30 +14,24 @@ impl Postgres {
         let source = format!("{home}/spesogon_pg");
         let pg_data = "/spesogon_pg";
 
-        let output = Command::new("docker")
-            .arg("run")
-            .arg("--name")
-            .arg(name)
-            .arg("--mount")
-            .arg(format!("type=bind,source={source},target={pg_data}"))
-            .arg("--cap-add=SYS_PTRACE")
-            .arg("--security-opt")
-            .arg("seccomp=unconfined")
-            .arg("-p")
-            .arg("5432:5432")
-            .arg("-e")
-            .arg("POSTGRES_PASSWORD=1111")
-            .arg("-e")
-            .arg("POSTGRES_DB=spesogon")
-            .arg("-e")
-            .arg(format!("PGDATA={pg_data}"))
-            .arg("-d")
-            .arg("postgres:16.2-alpine")
-            .output()?;
-
-        if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap());
-        }
+        Docker::start(ContainerConfig {
+            name:  name.to_string(),
+            image: "postgres:16.2-alpine".to_string(),
+            port:  Port {
+                host:      5432,
+                container: 5432,
+            },
+            mount: Mount {
+                host:      source,
+                container: pg_data.to_string(),
+            }
+            .into(),
+            env:   HashMap::from([
+                ("POSTGRES_PASSWORD".to_string(), "1111".to_string()),
+                ("POSTGRES_DB".to_string(), "spesogon".to_string()),
+                ("PGDATA".to_string(), pg_data.to_string()),
+            ]),
+        })?;
 
         Ok(())
     }
