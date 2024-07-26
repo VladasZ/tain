@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use anyhow::{anyhow, Result};
 
 use crate::{ContainerConfig, Docker, Mount, Port};
@@ -14,24 +12,25 @@ impl Postgres {
         let source = format!("{home}/spesogon_pg");
         let pg_data = "/spesogon_pg";
 
-        Docker::start(ContainerConfig {
-            name:  name.to_string(),
-            image: "postgres:16.2-alpine".to_string(),
-            port:  Port {
-                host:      5432,
-                container: 5432,
-            },
-            mount: Mount {
-                host:      source,
-                container: pg_data.to_string(),
-            }
-            .into(),
-            env:   HashMap::from([
-                ("POSTGRES_PASSWORD".to_string(), "1111".to_string()),
-                ("POSTGRES_DB".to_string(), "spesogon".to_string()),
-                ("PGDATA".to_string(), pg_data.to_string()),
-            ]),
-        })?;
+        Docker::start(
+            ContainerConfig::builder()
+                .name(name)
+                .image("postgres:16.2-alpine")
+                .port(Port {
+                    host:      5432,
+                    container: 5432,
+                })
+                .mount(Mount {
+                    host:      source,
+                    container: pg_data.into(),
+                })
+                .env([
+                    ("POSTGRES_PASSWORD".to_string(), "1111".to_string()),
+                    ("POSTGRES_DB".to_string(), "spesogon".to_string()),
+                    ("PGDATA".to_string(), pg_data.to_string()),
+                ])
+                .build(),
+        )?;
 
         Ok(())
     }
