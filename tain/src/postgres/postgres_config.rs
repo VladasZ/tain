@@ -6,10 +6,13 @@ use crate::Mount;
 pub struct PostgresConfig {
     #[builder(setter(into))]
     pub container_name: String,
+
     #[builder(default, setter(strip_option))]
-    pub db:             Option<String>,
+    pub db: Option<String>,
+
     #[builder(default, setter(strip_option))]
-    pub password:       Option<String>,
+    pub password: Option<String>,
+
     #[builder(default, setter(strip_option))]
-    pub data:           Option<Mount>,
+    pub data: Option<Mount>,
 }
