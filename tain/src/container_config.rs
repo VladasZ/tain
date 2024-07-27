@@ -12,6 +12,15 @@ pub struct Port {
     pub container: u16,
 }
 
+impl Port {
+    pub fn postgres() -> Self {
+        Self {
+            host:      5432,
+            container: 5432,
+        }
+    }
+}
+
 #[derive(TypedBuilder)]
 pub struct ContainerConfig {
     #[builder(setter(into))]

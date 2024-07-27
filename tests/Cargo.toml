@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+dirs = { workspace = true }
 anyhow = { workspace = true }
 
 tain = { path = "../tain" }
