@@ -1,10 +1,12 @@
 #![cfg(test)]
 
 use anyhow::{anyhow, Result};
+use serial_test::serial;
 use tain::{Docker, Mount, Postgres, PostgresConfig};
 
 #[test]
-fn test() -> Result<()> {
+#[serial]
+fn test_builder() -> Result<()> {
     Docker::check_running()?;
 
     assert!(!Docker::running("tain_pg_test")?);
@@ -30,6 +32,24 @@ fn test() -> Result<()> {
     Docker::rm("tain_pg_test")?;
 
     assert!(!Docker::running("tain_pg_test")?);
+
+    Ok(())
+}
+
+#[test]
+#[serial]
+fn test_env() -> Result<()> {
+    Docker::check_running()?;
+
+    assert!(!Docker::running("tain_test_env_pg")?);
+
+    Postgres::start_env()?;
+
+    assert!(Docker::running("tain_test_env_pg")?);
+
+    Docker::rm("tain_test_env_pg")?;
+
+    assert!(!Docker::running("tain_test_env_pg")?);
 
     Ok(())
 }

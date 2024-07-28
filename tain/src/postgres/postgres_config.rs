@@ -7,10 +7,10 @@ pub struct PostgresConfig {
     #[builder(setter(into))]
     pub container_name: String,
 
-    #[builder(default, setter(strip_option))]
+    #[builder(default, setter(strip_option), setter(into))]
     pub db: Option<String>,
 
-    #[builder(default, setter(strip_option))]
+    #[builder(default, setter(strip_option), setter(into))]
     pub password: Option<String>,
 
     #[builder(default, setter(strip_option))]
