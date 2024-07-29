@@ -53,3 +53,12 @@ fn test_env() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn connection_string() -> Result<()> {
+    assert_eq!(
+        Postgres::connection_string()?,
+        "postgresql://postgres:tain_test_env_pg@localhost:5432/tain_test_env_pg"
+    );
+    Ok(())
+}
