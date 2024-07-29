@@ -8,7 +8,21 @@ use crate::{ContainerConfig, Docker, Mount, Port, PostgresConfig};
 pub struct Postgres {}
 
 impl Postgres {
+    fn container_name() -> Result<String> {
+        dotenv()?;
+
+        let vars: HashMap<String, String> = vars().collect();
+
+        vars.get("POSTGRES_CONTAINER_NAME")
+            .ok_or(anyhow!("No POSTGRES_CONTAINER_NAME in .env"))
+            .cloned()
+    }
+
     pub fn start_env() -> Result<()> {
+        if Docker::running(&Self::container_name()?)? {
+            return Ok(());
+        };
+
         dotenv()?;
 
         let vars: HashMap<String, String> = vars().collect();
@@ -56,12 +70,14 @@ impl Postgres {
         ]
         .into();
 
-        let config = if let Some(data) = config.data {
+        let mut config = if let Some(data) = config.data {
             env.insert("PGDATA".to_string(), data.container.clone());
             container.mount(data).build()
         } else {
             container.build()
         };
+
+        config.env = env;
 
         Docker::start(config)?;
 

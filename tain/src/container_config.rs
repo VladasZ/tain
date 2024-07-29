@@ -2,11 +2,13 @@ use std::collections::HashMap;
 
 use typed_builder::TypedBuilder;
 
+#[derive(Debug)]
 pub struct Mount {
     pub host:      String,
     pub container: String,
 }
 
+#[derive(Debug)]
 pub struct Port {
     pub host:      u16,
     pub container: u16,
@@ -21,7 +23,7 @@ impl Port {
     }
 }
 
-#[derive(TypedBuilder)]
+#[derive(TypedBuilder, Debug)]
 pub struct ContainerConfig {
     #[builder(setter(into))]
     pub name: String,
