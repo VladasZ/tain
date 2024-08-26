@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{fs::create_dir_all, path::PathBuf, process::Command, str::FromStr};
 
 use anyhow::{bail, Result};
 use log::info;
@@ -56,6 +56,12 @@ impl Docker {
             .arg(format!("{}:{}", config.port.host, config.port.container));
 
         if let Some(mount) = config.mount {
+            let host = PathBuf::from_str(&mount.host)?;
+
+            if !host.exists() {
+                create_dir_all(host)?;
+            }
+
             command.arg("--mount").arg(format!(
                 "type=bind,source={},target={}",
                 mount.host, mount.container

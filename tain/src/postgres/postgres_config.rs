@@ -29,7 +29,20 @@ impl PostgresConfig {
 
         let db = vars.get("POSTGRES_DB").ok_or(anyhow!("No POSTGRES_DB in .env"))?;
         let password = vars.get("POSTGRES_PASSWORD").ok_or(anyhow!("No POSTGRES_PASSWORD in .env"))?;
-        let data_host = vars.get("POSTGRES_DATA_HOST").ok_or(anyhow!("No POSTGRES_DATA_HOST in .env"))?;
+
+        #[cfg(not(target_os = "windows"))]
+        fn data_host(vars: &HashMap<String, String>) -> Result<String> {
+            vars.get("POSTGRES_DATA_HOST").ok_or(anyhow!("No POSTGRES_DATA_HOST in .env"))?
+        }
+
+        #[cfg(target_os = "windows")]
+        fn data_host(vars: &HashMap<String, String>) -> Result<String> {
+            let home = dirs::home_dir().expect("No HOME");
+            let host = vars.get("POSTGRES_DATA_HOST").ok_or(anyhow!("No POSTGRES_DATA_HOST in .env"))?;
+            let host = format!("{}{host}", home.display());
+            Ok(host)
+        }
+
         let data_container = vars
             .get("POSTGRES_DATA_CONTAINER")
             .ok_or(anyhow!("No POSTGRES_DATA_CONTAINER in .env"))?;
@@ -42,7 +55,7 @@ impl PostgresConfig {
             .db(db)
             .password(password)
             .data(Mount {
-                host:      data_host.clone(),
+                host:      data_host(&vars)?,
                 container: data_container.clone(),
             })
             .build();
