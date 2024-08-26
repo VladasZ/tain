@@ -23,16 +23,12 @@ pub struct PostgresConfig {
 
 impl PostgresConfig {
     pub fn from_env() -> Result<Self> {
-        dotenv()?;
-
-        let vars: HashMap<String, String> = vars().collect();
-
-        let db = vars.get("POSTGRES_DB").ok_or(anyhow!("No POSTGRES_DB in .env"))?;
-        let password = vars.get("POSTGRES_PASSWORD").ok_or(anyhow!("No POSTGRES_PASSWORD in .env"))?;
-
         #[cfg(not(target_os = "windows"))]
         fn data_host(vars: &HashMap<String, String>) -> Result<String> {
-            vars.get("POSTGRES_DATA_HOST").ok_or(anyhow!("No POSTGRES_DATA_HOST in .env"))?
+            Ok(vars
+                .get("POSTGRES_DATA_HOST")
+                .ok_or(anyhow!("No POSTGRES_DATA_HOST in .env"))?
+                .to_string())
         }
 
         #[cfg(target_os = "windows")]
@@ -42,6 +38,13 @@ impl PostgresConfig {
             let host = format!("{}{host}", home.display());
             Ok(host)
         }
+
+        dotenv()?;
+
+        let vars: HashMap<String, String> = vars().collect();
+
+        let db = vars.get("POSTGRES_DB").ok_or(anyhow!("No POSTGRES_DB in .env"))?;
+        let password = vars.get("POSTGRES_PASSWORD").ok_or(anyhow!("No POSTGRES_PASSWORD in .env"))?;
 
         let data_container = vars
             .get("POSTGRES_DATA_CONTAINER")
