@@ -19,6 +19,9 @@ pub struct PostgresConfig {
 
     #[builder(default, setter(strip_option))]
     pub data: Option<Mount>,
+
+    #[builder(default = 5432)]
+    pub port: u16,
 }
 
 impl PostgresConfig {
@@ -45,6 +48,7 @@ impl PostgresConfig {
 
         let db = vars.get("POSTGRES_DB").ok_or(anyhow!("No POSTGRES_DB in .env"))?;
         let password = vars.get("POSTGRES_PASSWORD").ok_or(anyhow!("No POSTGRES_PASSWORD in .env"))?;
+        let port = vars.get("POSTGRES_PORT").ok_or(anyhow!("No POSTGRES_PORT in .env"))?;
 
         let data_container = vars
             .get("POSTGRES_DATA_CONTAINER")
@@ -61,6 +65,7 @@ impl PostgresConfig {
                 host:      data_host(&vars)?,
                 container: data_container.clone(),
             })
+            .port(port.parse()?)
             .build();
 
         Ok(new)

@@ -58,7 +58,7 @@ fn test_env() -> Result<()> {
 fn connection_string() -> Result<()> {
     assert_eq!(
         Postgres::connection_string()?,
-        "postgresql://postgres:tain_test_env_pg@localhost:5432/tain_test_env_pg"
+        "postgresql://postgres:tain_test_env_pg@localhost:54320/tain_test_env_pg"
     );
     Ok(())
 }

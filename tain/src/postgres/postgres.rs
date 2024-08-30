@@ -42,7 +42,10 @@ impl Postgres {
         let container = ContainerConfig::builder()
             .name(config.container_name)
             .image("postgres:16.2-alpine")
-            .port(Port::postgres());
+            .port(Port {
+                host:      config.port,
+                container: 5432,
+            });
 
         let mut env: HashMap<_, _> = [
             (
