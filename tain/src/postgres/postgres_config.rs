@@ -1,12 +1,12 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf, str::FromStr};
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use dotenvy::{dotenv, vars};
 use typed_builder::TypedBuilder;
 
 use crate::Mount;
 
-#[derive(TypedBuilder)]
+#[derive(Clone, TypedBuilder)]
 pub struct PostgresConfig {
     #[builder(setter(into))]
     pub container_name: String,
@@ -62,8 +62,8 @@ impl PostgresConfig {
             .db(db)
             .password(password)
             .data(Mount {
-                host:      data_host(&vars)?,
-                container: data_container.clone(),
+                host:      PathBuf::from_str(&data_host(&vars)?)?,
+                container: PathBuf::from_str(data_container)?,
             })
             .port(port.parse()?)
             .build();

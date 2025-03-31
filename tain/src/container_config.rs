@@ -1,11 +1,11 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 use typed_builder::TypedBuilder;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Mount {
-    pub host:      String,
-    pub container: String,
+    pub host:      PathBuf,
+    pub container: PathBuf,
 }
 
 #[derive(Debug)]

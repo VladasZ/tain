@@ -1,10 +1,10 @@
-use std::{fs::create_dir_all, path::PathBuf, process::Command, str::FromStr};
+use std::{fs::create_dir_all, process::Command};
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use log::info;
 use serde_json::from_str;
 
-use crate::{container::DockerContainer, ContainerConfig};
+use crate::{ContainerConfig, container::DockerContainer};
 
 pub struct Docker {}
 
@@ -56,7 +56,7 @@ impl Docker {
             .arg(format!("{}:{}", config.port.host, config.port.container));
 
         if let Some(mount) = config.mount {
-            let host = PathBuf::from_str(&mount.host)?;
+            let host = &mount.host;
 
             if !host.exists() {
                 create_dir_all(host)?;
@@ -64,7 +64,8 @@ impl Docker {
 
             command.arg("--mount").arg(format!(
                 "type=bind,source={},target={}",
-                mount.host, mount.container
+                mount.host.display(),
+                mount.container.display()
             ));
         };
 

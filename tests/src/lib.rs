@@ -1,6 +1,8 @@
 #![cfg(test)]
 
-use anyhow::{anyhow, Result};
+use std::{path::PathBuf, str::FromStr};
+
+use anyhow::{Result, anyhow};
 use serial_test::serial;
 use tain::{Docker, Mount, Postgres, PostgresConfig};
 
@@ -12,26 +14,36 @@ fn test_builder() -> Result<()> {
     assert!(!Docker::running("tain_pg_test")?);
 
     let home = dirs::home_dir().ok_or(anyhow!("no HOME"))?;
-    let home = home.to_str().unwrap();
 
-    let source = format!("{home}/spesogon_pg");
-    let pg_data = "/spesogon_pg";
+    let host_pg_path = home.join("spesogon_pg");
 
-    Postgres::start(
-        PostgresConfig::builder()
-            .container_name("tain_pg_test")
-            .data(Mount {
-                host:      source,
-                container: pg_data.to_string(),
-            })
-            .build(),
-    )?;
+    let config = PostgresConfig::builder()
+        .container_name("tain_pg_test")
+        .data(Mount {
+            host:      host_pg_path.clone(),
+            container: PathBuf::from_str("/spesogon_pg")?,
+        })
+        .build();
+
+    Postgres::start(config.clone())?;
 
     assert!(Docker::running("tain_pg_test")?);
 
     Docker::rm("tain_pg_test")?;
 
     assert!(!Docker::running("tain_pg_test")?);
+
+    assert!(host_pg_path.exists());
+
+    Postgres::start(config.clone())?;
+
+    assert!(Docker::running("tain_pg_test")?);
+    assert!(host_pg_path.exists());
+
+    Postgres::wipe_container(config)?;
+
+    assert!(!Docker::running("tain_pg_test")?);
+    assert!(!host_pg_path.exists());
 
     Ok(())
 }

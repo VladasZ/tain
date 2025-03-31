@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs::remove_dir_all};
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use dotenvy::vars;
 
 use crate::{ContainerConfig, Docker, Port, PostgresConfig};
@@ -60,7 +60,7 @@ impl Postgres {
         .into();
 
         let mut config = if let Some(data) = config.data {
-            env.insert("PGDATA".to_string(), data.container.clone());
+            env.insert("PGDATA".to_string(), data.container.to_str().unwrap().to_string());
             container.mount(data).build()
         } else {
             container.build()
@@ -71,5 +71,21 @@ impl Postgres {
         Docker::start(config)?;
 
         Ok(())
+    }
+
+    pub fn wipe_container(config: PostgresConfig) -> Result<()> {
+        Docker::rm(&config.container_name)?;
+
+        if let Some(mount) = config.data {
+            if mount.host.exists() {
+                remove_dir_all(mount.host)?;
+            }
+        };
+
+        Ok(())
+    }
+
+    pub fn wipe_container_env() -> Result<()> {
+        Self::wipe_container(PostgresConfig::from_env()?)
     }
 }

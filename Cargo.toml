@@ -1,6 +1,6 @@
 [workspace]
 
-resolver = "2"
+resolver = "3"
 
 members = ["tests", "tain"]
 
@@ -8,9 +8,9 @@ default-members = ["tain"]
 
 [workspace.dependencies]
 log = "0.4"
-dirs = "5.0"
+dirs = "6.0"
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-typed-builder = "0.20"
+typed-builder = "0.21"
 dotenvy = "0.15"
