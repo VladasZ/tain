@@ -1,5 +1,6 @@
 use anyhow::Result;
 use structopt::StructOpt;
+use sudo::RunningAs;
 use tain::{Docker, PostgresConfig};
 
 #[derive(StructOpt, Debug)]
@@ -27,6 +28,8 @@ enum PostgresCommand {
 }
 
 fn main() -> Result<()> {
+    elevate();
+
     let args = Cli::from_args();
 
     match args.command {
@@ -59,4 +62,16 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn elevate() {
+    if cfg!(target_os = "macos") {
+        return;
+    }
+
+    if matches!(sudo::check(), RunningAs::Root) {
+        return;
+    }
+
+    sudo::escalate_if_needed().expect("Failed to elevate");
 }

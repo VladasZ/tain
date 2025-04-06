@@ -15,5 +15,6 @@ serde_json = "1.0"
 typed-builder = "0.21"
 dotenvy = "0.15"
 structopt = "0.3"
+sudo = "0.6"
 
 tain = { path = "tain" }

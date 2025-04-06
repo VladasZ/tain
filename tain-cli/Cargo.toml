@@ -1,6 +1,6 @@
 [package]
 name = "tain-cli"
-version = "0.6.0"
+version = "0.6.1"
 edition = "2024"
 authors = ["Vladas Zakrevksis <146100@gmail.com>"]
 description = "Request container"
@@ -12,6 +12,7 @@ repository = "https://github.com/VladasZ/tain"
 name = "tain-cli"
 
 [dependencies]
+sudo = { workspace = true }
 anyhow = { workspace = true }
 structopt = { workspace = true }
 
