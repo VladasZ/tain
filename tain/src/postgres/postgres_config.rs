@@ -42,7 +42,9 @@ impl PostgresConfig {
             Ok(host)
         }
 
-        dotenv()?;
+        if let Err(err) = dotenv() {
+            panic!("Failed to open .env file: {err}");
+        }
 
         let vars: HashMap<String, String> = vars().collect();
 

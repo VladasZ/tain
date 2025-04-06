@@ -1,0 +1,18 @@
+[package]
+name = "tain-cli"
+version = "0.6.0"
+edition = "2024"
+authors = ["Vladas Zakrevksis <146100@gmail.com>"]
+description = "Request container"
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/VladasZ/tain"
+repository = "https://github.com/VladasZ/tain"
+
+[[bin]]
+name = "tain-cli"
+
+[dependencies]
+anyhow = { workspace = true }
+structopt = { workspace = true }
+
+tain = { workspace = true }
