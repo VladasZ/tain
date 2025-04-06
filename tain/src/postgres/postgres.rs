@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::remove_dir_all};
+use std::{borrow::Borrow, collections::HashMap, fs::remove_dir_all};
 
 use anyhow::{Result, anyhow};
 use dotenvy::vars;
@@ -8,14 +8,6 @@ use crate::{ContainerConfig, Docker, Port, PostgresConfig};
 pub struct Postgres {}
 
 impl Postgres {
-    fn container_name() -> Result<String> {
-        let vars: HashMap<String, String> = vars().collect();
-
-        vars.get("POSTGRES_CONTAINER_NAME")
-            .ok_or(anyhow!("No POSTGRES_CONTAINER_NAME in .env"))
-            .cloned()
-    }
-
     pub fn connection_string() -> Result<String> {
         let config = PostgresConfig::from_env()?;
 
@@ -29,16 +21,13 @@ impl Postgres {
     }
 
     pub fn start_env() -> Result<()> {
-        if Docker::running(&Self::container_name()?)? {
-            return Ok(());
-        };
-
         Self::start(PostgresConfig::from_env()?)?;
 
         Ok(())
     }
 
-    pub fn start(config: PostgresConfig) -> Result<()> {
+    pub fn start(config: impl Borrow<PostgresConfig>) -> Result<()> {
+        let config = config.borrow().clone();
         let container = ContainerConfig::builder()
             .name(config.container_name)
             .image("postgres:16.2-alpine")
@@ -74,13 +63,15 @@ impl Postgres {
     }
 
     pub fn wipe_container(config: PostgresConfig) -> Result<()> {
-        Docker::rm(&config.container_name)?;
+        if let Some(container) = Docker::get(&config.container_name)? {
+            container.rm()?;
+        }
 
         if let Some(mount) = config.data {
             if mount.host.exists() {
                 remove_dir_all(mount.host)?;
             }
-        };
+        }
 
         Ok(())
     }

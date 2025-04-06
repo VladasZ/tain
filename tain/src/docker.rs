@@ -17,7 +17,7 @@ impl Docker {
         Ok(())
     }
 
-    pub fn running_containers() -> Result<Vec<DockerContainer>> {
+    pub fn all_containers() -> Result<Vec<DockerContainer>> {
         let output = Command::new("docker")
             .arg("ps")
             .arg("--format")
@@ -38,11 +38,34 @@ impl Docker {
     }
 
     pub fn running(name: &str) -> Result<bool> {
-        let containers = Self::running_containers()?;
-        Ok(containers.into_iter().any(|c| c.names == name))
+        let Some(container) = Self::get(name)? else {
+            return Ok(false);
+        };
+
+        Ok(container.running())
+    }
+
+    pub fn get(name: &str) -> Result<Option<DockerContainer>> {
+        Ok(Self::all_containers()?.into_iter().find(|c| c.names == name))
+    }
+
+    pub fn start_existing(name: &str) -> Result<()> {
+        let output = Command::new("docker").arg("start").arg(name).output()?;
+
+        assert!(output.status.success(), "{output:?}");
+
+        Ok(())
     }
 
     pub fn start(config: ContainerConfig) -> Result<()> {
+        if let Some(container) = Docker::get(&config.name)? {
+            if container.running() {
+                return Ok(());
+            }
+
+            return container.start_or_unpause();
+        }
+
         let mut command = Command::new("docker");
 
         command
@@ -67,7 +90,7 @@ impl Docker {
                 mount.host.display(),
                 mount.container.display()
             ));
-        };
+        }
 
         for (key, value) in config.env {
             command.arg("-e").arg(format!("{key}={value}"));
@@ -80,13 +103,6 @@ impl Docker {
         if !output.status.success() {
             bail!(String::from_utf8(output.stderr).unwrap());
         }
-
-        Ok(())
-    }
-
-    pub fn rm(name: &str) -> Result<()> {
-        assert!(Command::new("docker").arg("stop").arg(name).output()?.status.success());
-        assert!(Command::new("docker").arg("rm").arg(name).output()?.status.success());
 
         Ok(())
     }

@@ -27,9 +27,11 @@ fn test_builder() -> Result<()> {
 
     Postgres::start(config.clone())?;
 
+    let container = Docker::get("tain_pg_test")?.unwrap();
+
     assert!(Docker::running("tain_pg_test")?);
 
-    Docker::rm("tain_pg_test")?;
+    container.rm()?;
 
     assert!(!Docker::running("tain_pg_test")?);
 
@@ -59,9 +61,49 @@ fn test_env() -> Result<()> {
 
     assert!(Docker::running("tain_test_env_pg")?);
 
-    Docker::rm("tain_test_env_pg")?;
+    let container = Docker::get("tain_test_env_pg")?.unwrap();
+
+    container.rm()?;
 
     assert!(!Docker::running("tain_test_env_pg")?);
+
+    Ok(())
+}
+
+#[test]
+#[serial]
+fn start_stopped_if_exists() -> Result<()> {
+    Docker::check_running()?;
+
+    if let Some(container) = Docker::get("tain_test_env_pg")? {
+        container.rm()?
+    }
+
+    let config = PostgresConfig::from_env()?;
+
+    Postgres::start(&config)?;
+
+    let container = Docker::get(&config.container_name)?.unwrap();
+
+    container.pause()?;
+
+    assert!(Docker::get(&config.container_name)?.unwrap().paused());
+
+    Postgres::start(&config)?;
+
+    assert!(Docker::get(&config.container_name)?.unwrap().running());
+
+    container.stop()?;
+
+    assert!(Docker::get(&config.container_name)?.unwrap().stopped());
+
+    Postgres::start(&config)?;
+
+    assert!(Docker::get(&config.container_name)?.unwrap().running());
+
+    container.rm()?;
+
+    assert_eq!(Docker::get(&config.container_name)?, None);
 
     Ok(())
 }
